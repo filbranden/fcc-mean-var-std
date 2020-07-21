@@ -4,6 +4,25 @@ import mean_var_std
 
 # the test case
 class UnitTests(unittest.TestCase):
+    def assertDictOrListAlmostEqual(self, first, second, places=None, msg=None, delta=None):
+        if isinstance(first, dict):
+            self.assertIsInstance(second, dict, 'First argument is a dictionary, but second argument is not.')
+            self.assertSetEqual(set(first.keys()), set(second.keys()), msg=msg)
+            for k in first:
+                self.assertDictOrListAlmostEqual(first[k], second[k], places=places, msg=msg, delta=delta)
+        elif isinstance(first, (list, tuple)):
+            self.assertIsInstance(second, (list, tuple), 'First argument is a sequence, but second argument is not.')
+            if len(first) != len(second):
+                # Reuse assertSequenceEqual for the error message on different length.
+                self.assertSequenceEqual(first, second, msg=msg)
+            for k in range(len(first)):
+                self.assertDictOrListAlmostEqual(first[k], second[k], places=places, msg=msg, delta=delta)
+        elif isinstance(first, (str, bytes)):
+            self.assertEqual(first, second, msg=msg)
+        else:
+            # Finally, use the normal assertAlmostEqual for comparison of floats, ints or complex numbers.
+            self.assertAlmostEqual(first, second, places=places, msg=msg, delta=delta)
+
     def test_calculate(self):
         actual = mean_var_std.calculate([2, 6, 2, 8, 4, 0, 1, 5, 7])
         expected = {
@@ -26,10 +45,10 @@ class UnitTests(unittest.TestCase):
             "min": [[1, 4, 0], [2, 0, 1], 0],
             "sum": [[11, 15, 9], [10, 12, 13], 35],
         }
-        self.assertAlmostEqual(
+        self.assertDictOrListAlmostEqual(
             actual,
             expected,
-            "Expected different output when calling 'calculate()' with '[2,6,2,8,4,0,1,5,7]'",
+            msg="Expected different output when calling 'calculate()' with '[2,6,2,8,4,0,1,5,7]'",
         )
 
     def test_calculate2(self):
@@ -54,10 +73,10 @@ class UnitTests(unittest.TestCase):
             "min": [[2, 1, 0], [1, 3, 0], 0],
             "sum": [[14, 13, 8], [15, 9, 11], 35],
         }
-        self.assertAlmostEqual(
+        self.assertDictOrListAlmostEqual(
             actual,
             expected,
-            "Expected different output when calling 'calculate()' with '[9,1,5,3,3,3,2,9,0]'",
+            msg="Expected different output when calling 'calculate()' with '[9,1,5,3,3,3,2,9,0]'",
         )
 
     def test_calculate_with_few_digits(self):
